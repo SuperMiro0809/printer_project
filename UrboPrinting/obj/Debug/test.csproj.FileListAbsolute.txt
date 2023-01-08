@@ -1,0 +1,27 @@
+C:\Users\MSI\source\repos\test\test\bin\Debug\test.exe
+C:\Users\MSI\source\repos\test\test\bin\Debug\test.exe.config
+C:\Users\MSI\source\repos\test\test\bin\Debug\Newtonsoft.Json.dll
+C:\Users\MSI\source\repos\test\test\bin\Debug\Newtonsoft.Json.xml
+C:\Users\MSI\source\repos\test\test\obj\Debug\test.Form1.resources
+C:\Users\MSI\source\repos\test\test\obj\Debug\test.Properties.Resources.resources
+C:\Users\MSI\source\repos\test\test\obj\Debug\test.csproj.GenerateResource.cache
+C:\Users\MSI\source\repos\test\test\obj\Debug\test.csproj.CoreCompileInputs.cache
+C:\Users\MSI\source\repos\test\test\obj\Debug\test.csproj.CopyComplete
+C:\Users\MSI\source\repos\test\test\obj\Debug\test.exe
+C:\Users\MSI\source\repos\test\test\obj\Debug\test.pdb
+C:\Users\MSI\source\repos\test\test\bin\Debug\test.pdb
+C:\Users\MSI\source\repos\test\test\bin\Debug\CSJLabelLib.dll
+C:\Users\MSI\source\repos\test\test\obj\Debug\test.csproj.AssemblyReference.cache
+C:\Users\EDITCREATION PC-2\Downloads\test\test\bin\Debug\test.exe.config
+C:\Users\EDITCREATION PC-2\Downloads\test\test\bin\Debug\test.exe
+C:\Users\EDITCREATION PC-2\Downloads\test\test\bin\Debug\Newtonsoft.Json.dll
+C:\Users\EDITCREATION PC-2\Downloads\test\test\bin\Debug\Newtonsoft.Json.xml
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\test.csproj.AssemblyReference.cache
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\test.Form1.resources
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\test.Properties.Resources.resources
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\test.csproj.GenerateResource.cache
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\test.csproj.CoreCompileInputs.cache
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\test.csproj.CopyComplete
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\test.exe
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\test.pdb
+C:\Users\EDITCREATION PC-2\Downloads\test\test\bin\Debug\test.pdb

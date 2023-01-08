@@ -1,0 +1,658 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Newtonsoft.Json;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.IO;
+using System.Threading;
+using System.Diagnostics;
+using System.Drawing.Printing;
+using com.citizen.sdk.LabelPrint;
+using System.Management;
+using System.Globalization;
+using System.Printing;
+using UrboPrinting;
+
+namespace UrboPrinting
+{
+    public partial class Form1 : Form
+    {
+        Counter counter = new Counter();
+        LabelPrinter printer = new LabelPrinter();
+        CancellationTokenSource cts = new CancellationTokenSource();
+        int port = 0;
+        bool isRunned = false;
+        string printerName = "";
+
+        public Form1()
+        {
+            InitializeComponent();
+
+            notifyIcon.ContextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
+            notifyIcon.ContextMenuStrip.Items.Add("Exit", null, this.MenuExit_Click);
+
+            comboBox1.Items.AddRange(new object[] {"TSC MB240",
+                        "TSC MH641",
+                        "TSC TX600",
+                        "Citizen",
+                        "Printronix"});
+        }
+
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            AppendTextBox("App Started");
+            comboBox1.SelectedIndex = Properties.Settings.Default.printerIndex;
+            Thread thread = new Thread(startListener);
+            thread.Start();
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                Hide();
+                notifyIcon.Visible = true;
+                notifyIcon.ShowBalloonTip(1000);
+            }
+        }
+
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            if (this.WindowState == FormWindowState.Minimized)
+            {
+                Hide();
+                notifyIcon.Visible = true;
+                notifyIcon.ShowBalloonTip(1000);
+            }
+        }
+
+        private void Form1_Deactivate(object sender, EventArgs e)
+        {
+            Hide();
+            notifyIcon.Visible = true;
+            notifyIcon.ShowBalloonTip(1000);
+        }
+
+        private void notifyIcon_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            Show();
+            Activate();
+            this.WindowState = FormWindowState.Normal;
+            notifyIcon.Visible = false;
+        }
+
+        void MenuExit_Click(object sender, EventArgs e)
+        {
+            notifyIcon.Visible = false;
+            Console.WriteLine("Closed");
+            Environment.Exit(0);
+        }
+
+        public void AppendTextBox(string value)
+        {
+            if (InvokeRequired)
+            {
+                this.Invoke(new Action<string>(AppendTextBox), new object[] { value });
+                return;
+            }
+
+            DateTime localDate = DateTime.Now;
+            var culture = new CultureInfo("bg-BG");
+            string logLine = $"[{localDate.ToString(culture)}]> " + value + "\r\n";
+            logBox.AppendText(logLine);
+        }
+
+        private void startListener()
+        {
+            AppendTextBox("Server Started");
+            HttpListener listener = new HttpListener();
+            listener.Prefixes.Add("http://localhost:4444/");
+            listener.Start();
+            counter.Count = 1;
+
+            while (true)
+            {
+                ThreadPool.QueueUserWorkItem(Process, listener.GetContext());
+            }
+        }
+
+        public int CheckIfPrintedIsConnected()
+        {
+            int status = -1;
+
+            for (int i = 1; i <= 5; i++)
+            {
+                int ret = printer.Connect(LabelConst.CLS_PORT_USB, "USB00" + i.ToString());
+                if (ret == LabelConst.CLS_E_CONNECTED || ret == LabelConst.CLS_SUCCESS)
+                {
+                    port = i;
+                    status = ret;
+                    break;
+                }
+            }
+            /*
+            if (port != 0)
+            {
+                status = printer.Connect(LabelConst.CLS_PORT_USB, "USB00" + port.ToString());
+            }else
+            {
+                for (int i = 1; i <= 5; i++)
+                {
+                    int ret = printer.Connect(LabelConst.CLS_PORT_USB, "USB00" + i.ToString());
+                    if (ret == LabelConst.CLS_E_CONNECTED || ret == LabelConst.CLS_SUCCESS)
+                    {
+                        port = i;
+                        status = ret;
+                        break;
+                    }
+                }
+            }*/
+
+            return status;
+        }
+
+        public string GetTSCPrinterName(string searchFor)
+        {
+            String pkInstalledPrinters;
+            string driverName = "";
+
+            PrinterSettings settings = new PrinterSettings();
+
+            for (int i = 0; i < PrinterSettings.InstalledPrinters.Count; i++)
+            {
+                pkInstalledPrinters = PrinterSettings.InstalledPrinters[i];
+
+                //pkInstalledPrinters == "TSC MB240" || pkInstalledPrinters == "TSC MH641" || pkInstalledPrinters == "TSC TX600"
+                if (pkInstalledPrinters == searchFor)
+                {
+                    //driverName = settings.PrinterName;
+                    driverName = searchFor;
+                    break;
+                }
+            }
+
+            return driverName;
+        }
+
+        public async Task DoSomethingEveryTenSeconds()
+        {
+            while (true)
+            {
+                var delayTask = Task.Delay(1500);
+                ResetCounter();
+                await delayTask;
+            }
+        }
+
+        public void ResetCounter()
+        {
+            int ret = CheckIfPrintedIsConnected();
+
+            if (ret == LabelConst.CLS_E_NOTCONNECT)
+            {
+                counter.Count = 1;
+            }
+
+            if (ret == LabelConst.CLS_E_CONNECTED)
+            {
+                printer.PrinterCheck();
+
+                if (printer.GetMechanismOpen() == 1)
+                {
+                    Console.WriteLine("otvoreno");
+                    counter.Count = 1;
+                }
+                if (printer.GetRibbonEnd() == 1)
+                {
+                    Console.WriteLine("Paper Error");
+                }
+            }
+        }
+
+        void Process(object o)
+        {
+            var context = o as HttpListenerContext;
+            HttpListenerRequest request = context.Request;
+            Console.WriteLine("{0} {1} HTTP/1.1", request.HttpMethod, request.RawUrl);
+            Console.WriteLine("User-Agent: {0}", request.UserAgent);
+            Console.WriteLine("Accept-Encoding: {0}", request.Headers["Accept-Encoding"]);
+            Console.WriteLine("Connection: {0}", request.KeepAlive ? "Keep-Alive" : "close");
+            Console.WriteLine("Host: {0}", request.UserHostName);
+
+            HttpListenerResponse response = context.Response;
+
+            if (request.HttpMethod == "GET")
+            {
+                response.Headers.Add("Access-Control-Allow-Origin", "*");
+                response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, PUT");
+                OnGetRequest(request, response);
+            }
+            else
+            {
+                OnPostRequest(request, response);
+            }
+            // process request and make response
+        }
+
+        private void OnGetRequest(HttpListenerRequest request, HttpListenerResponse response)
+        {
+            Console.WriteLine("Tuka sme");
+            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(printerName);
+            Stream output = response.OutputStream;
+            response.ContentLength64 = buffer.Length;
+            /*string qrCodeStr = "PBTNFTGS";
+
+             TSCLIB_DLL.openport(printerName);
+             TSCLIB_DLL.setup("100", "209,5", "10", "15", "0", "0", "0");
+             TSCLIB_DLL.clearbuffer();
+
+             //left part
+             TSCLIB_DLL.windowsfont(300, 1600, 70, 90, 0, 0, "Bebas Neue Light", "08");
+             TSCLIB_DLL.windowsfont(360, 1600, 70, 90, 0, 0, "Bebas Neue Bold", "08");
+             TSCLIB_DLL.windowsfont(300, 1510, 60, 90, 0, 0, "Bebas Neue Regular", "20:00H");
+             TSCLIB_DLL.windowsfont(360, 1510, 30, 90, 0, 0, "Montserrat Light", "ЕФБЕТ ЛИГА");
+             TSCLIB_DLL.windowsfont(400, 1510, 30, 90, 0, 0, "Montserrat SemiBold", "ЦСКА СОФИЯ - ЛУДОГОРЕЦ");
+             TSCLIB_DLL.windowsfont(480, 1600, 30, 90, 0, 0, "Montserrat", "ПОСЕТИТЕЛ / VISITOR");
+             TSCLIB_DLL.windowsfont(510, 1600, 40, 90, 2, 0, "Montserrat", "ХРИСТО СТОИЧКОВ");
+
+             TSCLIB_DLL.windowsfont(610, 1600, 30, 90, 0, 0, "Montserrat", "ТИП");
+             TSCLIB_DLL.windowsfont(640, 1600, 30, 90, 0, 0, "Montserrat", "TYPE");
+             TSCLIB_DLL.windowsfont(690, 1600, 30, 90, 2, 0, "Montserrat", "СТАНДАРТЕН");
+
+             TSCLIB_DLL.windowsfont(610, 1380, 30, 90, 0, 0, "Montserrat", "ВХОД");
+             TSCLIB_DLL.windowsfont(640, 1380, 30, 90, 0, 0, "Montserrat", "ENTRANCE");
+             TSCLIB_DLL.windowsfont(690, 1380, 30, 90, 2, 0, "Montserrat", "VIP");
+
+             TSCLIB_DLL.windowsfont(610, 1190, 30, 90, 0, 0, "Montserrat", "СЕКТОР");
+             TSCLIB_DLL.windowsfont(640, 1190, 30, 90, 0, 0, "Montserrat", "SECTOR");
+             TSCLIB_DLL.windowsfont(690, 1190, 30, 90, 2, 0, "Montserrat", "VIP ЛОЖА 5");
+
+             TSCLIB_DLL.windowsfont(610, 960, 30, 90, 0, 0, "Montserrat", "РЕД");
+             TSCLIB_DLL.windowsfont(640, 960, 30, 90, 0, 0, "Montserrat", "ROW");
+             TSCLIB_DLL.windowsfont(690, 960, 30, 90, 2, 0, "Montserrat", "3");
+
+             TSCLIB_DLL.windowsfont(610, 800, 30, 90, 0, 0, "Montserrat", "МЯСТО");
+             TSCLIB_DLL.windowsfont(640, 800, 30, 90, 0, 0, "Montserrat", "SEAT");
+             TSCLIB_DLL.windowsfont(690, 800, 30, 90, 2, 0, "Montserrat", "2");
+
+             TSCLIB_DLL.windowsfont(610, 640, 30, 90, 0, 0, "Montserrat", "ЦЕНА");
+             TSCLIB_DLL.windowsfont(640, 640, 30, 90, 0, 0, "Montserrat", "PRICE");
+             TSCLIB_DLL.windowsfont(690, 640, 30, 90, 2, 0, "Montserrat", "50,00");
+
+             //right part
+             TSCLIB_DLL.windowsfont(300, 190, 40, 90, 0, 0, "Montserrat", "ЦЕНА");
+             TSCLIB_DLL.windowsfont(330, 190, 40, 90, 0, 0, "Montserrat", "PRICE");
+             TSCLIB_DLL.windowsfont(360, 190, 60, 90, 0, 0, "Bebas Neue Regular", "50,00");
+
+             TSCLIB_DLL.windowsfont(460, 190, 20, 90, 0, 0, "Montserrat", "ТИП/TYPE");
+             TSCLIB_DLL.windowsfont(480, 190, 20, 90, 2, 0, "Montserrat", "СТАНДАРТЕН");
+
+             TSCLIB_DLL.windowsfont(500, 190, 20, 90, 0, 0, "Montserrat", "ВХОД/ENTRANCE");
+             TSCLIB_DLL.windowsfont(520, 190, 20, 90, 2, 0, "Montserrat", "VIP");
+
+             TSCLIB_DLL.windowsfont(540, 190, 20, 90, 0, 0, "Montserrat", "СЕКТОР/SECTOR");
+             TSCLIB_DLL.windowsfont(560, 190, 20, 90, 2, 0, "Montserrat", "VIP ЛОЖА 5");
+
+             TSCLIB_DLL.windowsfont(580, 190, 20, 90, 0, 0, "Montserrat", "РЕД/ROW");
+             TSCLIB_DLL.windowsfont(600, 190, 20, 90, 2, 0, "Montserrat", "3");
+
+             TSCLIB_DLL.windowsfont(620, 190, 20, 90, 0, 0, "Montserrat", "МЯСТО/SEAT");
+             TSCLIB_DLL.windowsfont(640, 190, 20, 90, 2, 0, "Montserrat", "2");
+
+             TSCLIB_DLL.windowsfont(660, 190, 20, 90, 2, 0, "Montserrat", qrCodeStr);
+
+             //ticket code
+             TSCLIB_DLL.windowsfont(500, 470, 40, 90, 0, 0, "Montserrat", qrCodeStr);
+
+
+             TSCLIB_DLL.sendcommand("PUTBMP 330,850,\"cska_log.BMP\"");
+             TSCLIB_DLL.sendcommand("PUTBMP 330,690,\"razgrad.BMP\"");
+             TSCLIB_DLL.sendcommand("QRCODE 550,470,L,8,A,270,M2,S3,\"" + qrCodeStr + "\"");
+
+             TSCLIB_DLL.printlabel("1", "1");
+             TSCLIB_DLL.closeport(); */
+
+            /*
+            string qrCodeStr = "PBTNFTGS";
+            TSCLIB_DLL.openport(printerName);
+            TSCLIB_DLL.clearbuffer();
+
+            //left part
+            TSCLIB_DLL.windowsfont(730, 305, 70, 270, 0, 0, "Bebas Neue Light", "08");
+            TSCLIB_DLL.windowsfont(670, 305, 70, 270, 0, 0, "Bebas Neue Bold", "08");
+            TSCLIB_DLL.windowsfont(610, 307, 35, 270, 0, 0, "Bebas Neue Light", "2021");
+
+            TSCLIB_DLL.windowsfont(730, 395, 40, 270, 0, 0, "Montserrat", "ЕФБЕТ ЛИГА");
+            TSCLIB_DLL.windowsfont(690, 395, 40, 270, 2, 0, "Montserrat", "ЦСКА СОФИЯ - ЛУДОГОРЕЦ");
+            TSCLIB_DLL.windowsfont(650, 395, 40, 270, 0, 0, "Montserrat", "Име на стадион");
+            TSCLIB_DLL.windowsfont(610, 395, 40, 270, 0, 0, "Montserrat", "20:00H");
+
+            TSCLIB_DLL.windowsfont(490, 305, 30, 270, 0, 0, "Montserrat", "ПОСЕТИТЕЛ / VISITOR");
+            TSCLIB_DLL.windowsfont(470, 305, 40, 270, 2, 0, "Montserrat", "ХРИСТО СТОИЧКОВ");
+
+            TSCLIB_DLL.windowsfont(390, 305, 30, 270, 0, 0, "Montserrat", "ТИП");
+            TSCLIB_DLL.windowsfont(360, 305, 30, 270, 0, 0, "Montserrat", "TYPE");
+            TSCLIB_DLL.windowsfont(330, 305, 30, 270, 2, 0, "Montserrat", "СТАНДАРТЕН");
+
+            TSCLIB_DLL.windowsfont(390, 520, 30, 270, 0, 0, "Montserrat", "ВХОД");
+            TSCLIB_DLL.windowsfont(360, 520, 30, 270, 0, 0, "Montserrat", "ENTRANCE");
+            TSCLIB_DLL.windowsfont(330, 520, 30, 270, 2, 0, "Montserrat", "VIP");
+
+            TSCLIB_DLL.windowsfont(390, 710, 30, 270, 0, 0, "Montserrat", "СЕКТОР");
+            TSCLIB_DLL.windowsfont(360, 710, 30, 270, 0, 0, "Montserrat", "SECTOR");
+            TSCLIB_DLL.windowsfont(330, 710, 30, 270, 2, 0, "Montserrat", "VIP ЛОЖА 5");
+
+            TSCLIB_DLL.windowsfont(390, 910, 30, 270, 0, 0, "Montserrat", "РЕД");
+            TSCLIB_DLL.windowsfont(360, 910, 30, 270, 0, 0, "Montserrat", "ROW");
+            TSCLIB_DLL.windowsfont(330, 910, 30, 270, 2, 0, "Montserrat", "3");
+
+            TSCLIB_DLL.windowsfont(390, 1010, 30, 270, 0, 0, "Montserrat", "МЯСТО");
+            TSCLIB_DLL.windowsfont(360, 1010, 30, 270, 0, 0, "Montserrat", "SEAT");
+            TSCLIB_DLL.windowsfont(330, 1010, 30, 270, 2, 0, "Montserrat", "2");
+
+            TSCLIB_DLL.windowsfont(390, 1120, 30, 270, 0, 0, "Montserrat", "ЦЕНА");
+            TSCLIB_DLL.windowsfont(360, 1120, 30, 270, 0, 0, "Montserrat", "PRICE");
+            TSCLIB_DLL.windowsfont(330, 1120, 30, 270, 2, 0, "Montserrat", "50.00");
+
+            //right part
+            TSCLIB_DLL.windowsfont(610, 1480, 30, 270, 0, 0, "Montserrat", "ЦЕНА/PRICE");
+            TSCLIB_DLL.windowsfont(580, 1480, 50, 270, 0, 0, "Bebas Neue Regular", "50.00");
+            //TSCLIB_DLL.windowsfont(560, 1480, 30, 270, 0, 0, "Montserrat", "BGN");
+
+            TSCLIB_DLL.windowsfont(520, 1480, 20, 270, 0, 0, "Montserrat", "ТИП/TYPE");
+            TSCLIB_DLL.windowsfont(500, 1480, 20, 270, 2, 0, "Montserrat", "СТАНДАРТЕН");
+
+            TSCLIB_DLL.windowsfont(480, 1480, 20, 270, 0, 0, "Montserrat", "ВХОД/ENTRANCE");
+            TSCLIB_DLL.windowsfont(460, 1480, 20, 270, 2, 0, "Montserrat", "VIP");
+
+            TSCLIB_DLL.windowsfont(440, 1480, 20, 270, 0, 0, "Montserrat", "СЕКТОР/SECTOR");
+            TSCLIB_DLL.windowsfont(420, 1480, 20, 270, 2, 0, "Montserrat", "VIP ЛОЖА 5");
+
+            TSCLIB_DLL.windowsfont(400, 1480, 20, 270, 0, 0, "Montserrat", "РЕД/ROW");
+            TSCLIB_DLL.windowsfont(380, 1480, 20, 270, 2, 0, "Montserrat", "3");
+
+            TSCLIB_DLL.windowsfont(360, 1480, 20, 270, 0, 0, "Montserrat", "МЯСТО/SEAT");
+            TSCLIB_DLL.windowsfont(340, 1480, 20, 270, 2, 0, "Montserrat", "2");
+
+            TSCLIB_DLL.windowsfont(320, 1480, 20, 270, 2, 0, "Montserrat", qrCodeStr);
+
+            //ticket code
+            TSCLIB_DLL.windowsfont(520, 1250, 40, 270, 0, 0, "Montserrat", qrCodeStr);
+
+
+            TSCLIB_DLL.sendcommand("PUTBMP 560,1050,\"cska.BMP\"");
+            TSCLIB_DLL.sendcommand("PUTBMP 560,1250,\"slavia.BMP\"");
+            TSCLIB_DLL.sendcommand("QRCODE 470,1250,L,8,A,90,M2,S3,\"" + qrCodeStr + "\"");
+
+            TSCLIB_DLL.printlabel("1", "1");
+            TSCLIB_DLL.closeport();*/
+
+            output.Write(buffer, 0, buffer.Length);
+        }
+
+        private void OnPostRequest(HttpListenerRequest request, HttpListenerResponse response)
+        {
+            Stream body = request.InputStream;
+            byte[] buffer = System.Text.Encoding.UTF8.GetBytes("<HTML><BODY> " + "TEST" + "</BODY></HTML>");
+            Stream output = response.OutputStream;
+            response.ContentLength64 = buffer.Length;
+            Encoding encoding = request.ContentEncoding;
+            StreamReader reader = new StreamReader(body, encoding);
+
+            response.AppendHeader("Access-Control-Allow-Origin", "*");
+            if (request.HttpMethod == "OPTIONS")
+            {
+                response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With");
+                response.AddHeader("Access-Control-Allow-Methods", "GET, POST, PUT");
+                response.AddHeader("Access-Control-Max-Age", "1728000");
+                output.Write(buffer, 0, buffer.Length);
+                body.Close();
+                reader.Close();
+            }
+            else if (request.HttpMethod == "POST")
+            {
+                var serializer = new JsonSerializer();
+                Data data = null;
+
+                using (var sr = new StreamReader(body))
+                using (var jsonTextReader = new JsonTextReader(sr))
+                {
+                    string json = JsonConvert.SerializeObject(serializer.Deserialize(jsonTextReader));
+                    data = JsonConvert.DeserializeObject<Data>(json);
+                    Console.WriteLine(json);
+                }
+
+                if (request.ContentType != null)
+                {
+                    Console.WriteLine("Client data content type {0}", request.ContentType);
+                }
+                Console.WriteLine("Client data content length {0}", request.ContentLength64);
+
+                if (printerName.Contains("TSC"))
+                {
+                    string driverName = GetTSCPrinterName(printerName);
+
+                    if (driverName == "")
+                    {
+                        //MessageBox.Show("Driver not installed. Press to install.");
+                        using (Process p = new Process())
+                        {
+                            p.StartInfo.FileName = "TSC_2021.2_M-1.exe";
+                            p.StartInfo.UseShellExecute = true;
+                            p.StartInfo.Verb = "runas";
+
+                            try
+                            {
+                                p.Start();
+                                output.Write(buffer, 0, buffer.Length);
+                                body.Close();
+                                reader.Close();
+                                return;
+                                // BackIcon.ShowBalloonTip(5000, "Backup", "Editor for settings startet", ToolTipIcon.Info);
+                            }
+                            catch (Exception)
+                            {
+                                //MessageBox.Show("Program til settings blev ikke fundet");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        TSCLIB_DLL.openport(driverName);
+                        //TSCLIB_DLL.setup("100", "209.5", "10", "15", "0", "0", "0");
+                        for (int i = 0; i < data.tickets.Length; i++)
+                        {
+                            TSCLIB_DLL.clearbuffer();
+
+                            for (int j = 0; j < data.tickets[i].elements.Length; j++)
+                            {
+                                var el = data.tickets[i].elements[j];
+                                TSCLIB_DLL.windowsfont(el.x, el.y, el.fontheight, el.rotation, el.fontstyle, el.fontunderline, el.szFaceName, el.content);
+                            }
+
+                            for (int j = 0; j < data.tickets[i].commands.Length; j++)
+                            {
+                                TSCLIB_DLL.sendcommand(data.tickets[i].commands[j]);
+                            }
+
+                            AppendTextBox($"Printing ticket {i + 1} of {data.tickets.Length}");
+                            TSCLIB_DLL.printlabel("1", "1");
+                        }
+
+                        TSCLIB_DLL.closeport();
+                    }
+                }
+                else if (printerName == "Citizen")
+                {
+                    int ret = CheckIfPrintedIsConnected();
+
+                    if (!isRunned)
+                    {
+                        isRunned = true;
+                        DoSomethingEveryTenSeconds();
+                    }
+
+
+                    if (ret == LabelConst.CLS_E_CONNECTED || ret == LabelConst.CLS_SUCCESS)
+                    {
+                        //printer.Connect(LabelConst.CLS_PORT_USB, "USB002");
+                        printer.SetMeasurementUnit(LabelConst.CLS_UNIT_MILLI);
+                        printer.SetFormatAttribute(1);
+                        printer.SetPrintDarkness(30);
+                        int stopOffset = printer.GetStopOffset();
+                        int mediaLength = printer.GetContinuousMediaLength();
+
+                        if (data.printType == 1 && stopOffset != 270)
+                        {
+                            printer.SetStopOffset(270);
+                            
+                        }
+
+                        if (counter.Count == 1 && data.printType == 0)
+                        {
+                            LabelDesign design = new LabelDesign();
+
+                            printer.SetContinuousMediaLength(1910);
+
+                            design.DrawTextPtrFont("Sample Print",
+                                             LabelConst.CLS_LOCALE_JP, LabelConst.CLS_PRT_FNT_TRIUMVIRATE_B,
+                                             LabelConst.CLS_RT_NORMAL, 1, 1, LabelConst.CLS_PRT_FNT_SIZE_24, 20,
+                                             300);
+
+                            printer.Print(design, 1);
+
+                            counter.Count = counter.Count + 1;
+                            Thread.Sleep(5000);
+                            Console.WriteLine("Sample Print");
+                        }
+
+                        for (int i = 0; i < data.tickets.Length; i++)
+                        {
+                            LabelDesign design = new LabelDesign();
+
+                            if(data.printType == 0 && mediaLength != 2083)
+                            {
+                                printer.SetContinuousMediaLength(2083);
+                            }
+
+                            for (int j = 0; j < data.tickets[i].elements.Length; j++)
+                            {
+
+                                var el = data.tickets[i].elements[j];
+                                design.DrawTextPCFont(el.content, el.szFaceName, el.rotation, 100, 100, el.fontheight, el.fontstyle, el.x, el.y);
+                            }
+
+                            for (int j = 0; j < data.tickets[i].photos.Length; j++)
+                            {
+                                var el = data.tickets[i].photos[j];
+                                string desktopPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\URBO_mpos\\{el.filePath}";
+                                Console.WriteLine(desktopPath);
+                                design.DrawBitmap(desktopPath, el.rotation, el.width, el.height, el.x, el.y);
+                            }
+
+                            for (int j = 0; j < data.tickets[i].qrCode.Length; j++)
+                            {
+                                var el = data.tickets[i].qrCode[j];
+                                design.DrawQRCode(el.data, el.encoding, el.rotation, el.exp, el.ECLevel, el.x, el.y);
+                            }
+
+                            AppendTextBox($"Printing ticket {i + 1} of {data.tickets.Length}");
+                            printer.Print(design, 1);
+                            counter.Count = counter.Count + 1;
+                            Console.WriteLine(counter.Count);
+                            Thread.Sleep(5000);
+                        }
+
+                        // Disconnect
+                        printer.Disconnect();
+                    }
+
+                }
+            
+                output.Write(buffer, 0, buffer.Length);
+                body.Close();
+                reader.Close();
+            }
+            else
+            {
+                string selectedPath = "";
+                Encoding utf8 = Encoding.UTF8;
+                Encoding win = Encoding.GetEncoding("windows-1251");
+                var serializer = new JsonSerializer();
+                Bon data = null;
+
+                using (var sr = new StreamReader(body))
+                using (var jsonTextReader = new JsonTextReader(sr))
+                {
+                    string json = JsonConvert.SerializeObject(serializer.Deserialize(jsonTextReader));
+                    data = JsonConvert.DeserializeObject<Bon>(json);
+                    Console.WriteLine(json);
+                }
+
+                if (request.ContentType != null)
+                {
+                    Console.WriteLine("Client data content type {0}", request.ContentType);
+                }
+                Console.WriteLine("Client data content length {0}", request.ContentLength64);
+
+                Console.WriteLine(data.ticket);
+                Thread t = new Thread((ThreadStart)(() =>
+                {
+                    SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+                    saveFileDialog1.InitialDirectory = Properties.Settings.Default.downloadPath;
+                    saveFileDialog1.RestoreDirectory = true;
+                    saveFileDialog1.Title = "Save bill file:";
+                    saveFileDialog1.DefaultExt = "txt";
+                    saveFileDialog1.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
+                    saveFileDialog1.FilterIndex = 1;
+                    saveFileDialog1.FileName = "bill.txt";
+
+                    if (saveFileDialog1.ShowDialog(new Form() { TopMost=true, WindowState = FormWindowState.Minimized }) == DialogResult.OK)
+                    {
+                        selectedPath = saveFileDialog1.FileName;
+                        using (StreamWriter sw = new StreamWriter(saveFileDialog1.OpenFile(), Encoding.Default))
+                        {
+                            byte[] utfBytes = utf8.GetBytes(data.ticket);
+                            byte[] winBytes = Encoding.Convert(utf8, win, utfBytes);
+                            string result = win.GetString(winBytes);
+                            string downloadPath = Path.GetFullPath(selectedPath);
+                            Properties.Settings.Default.downloadPath = downloadPath;
+                            Properties.Settings.Default.Save();
+                            sw.WriteLine(result);
+                        }
+                    }else
+                    {
+                        response.StatusCode = (int)HttpStatusCode.NotFound;
+                        response.StatusDescription = "Not Found";
+                    }
+                }));
+
+                t.SetApartmentState(ApartmentState.STA);
+                t.Start();
+                t.Join();
+
+                output.Write(buffer, 0, buffer.Length);
+                body.Close();
+                reader.Close();
+            }
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            printerName = comboBox1.SelectedItem.ToString();
+            Properties.Settings.Default.printerIndex = comboBox1.SelectedIndex;
+            Properties.Settings.Default.Save();
+            Console.WriteLine(printerName);
+            AppendTextBox($"Printer changed to: {printerName}");
+        }
+    }
+}

@@ -1,0 +1,53 @@
+C:\Users\EDITCREATION PC-2\Downloads\test\test\bin\Debug\Newtonsoft.Json.dll
+C:\Users\EDITCREATION PC-2\Downloads\test\test\bin\Debug\Newtonsoft.Json.xml
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\UrboPrinting.csproj.AssemblyReference.cache
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\test.Form1.resources
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\UrboPrinting.csproj.GenerateResource.cache
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\UrboPrinting.csproj.CoreCompileInputs.cache
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\UrboPrinting.csproj.CopyComplete
+C:\Users\EDITCREATION PC-2\Downloads\test\test\bin\Debug\UrboPrinting.exe.config
+C:\Users\EDITCREATION PC-2\Downloads\test\test\bin\Debug\UrboPrinting.exe
+C:\Users\EDITCREATION PC-2\Downloads\test\test\bin\Debug\UrboPrinting.pdb
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\UrboPrinting.Properties.Resources.resources
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\UrboPrinting.exe
+C:\Users\EDITCREATION PC-2\Downloads\test\test\obj\Debug\UrboPrinting.pdb
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\bin\Debug\UrboPrinting.exe.config
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\bin\Debug\UrboPrinting.exe
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\bin\Debug\UrboPrinting.pdb
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\bin\Debug\Newtonsoft.Json.dll
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\bin\Debug\Newtonsoft.Json.xml
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\obj\Debug\UrboPrinting.csproj.AssemblyReference.cache
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\obj\Debug\test.Form1.resources
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\obj\Debug\UrboPrinting.Properties.Resources.resources
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\obj\Debug\UrboPrinting.csproj.GenerateResource.cache
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\obj\Debug\UrboPrinting.csproj.CoreCompileInputs.cache
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\obj\Debug\UrboPrinting.csproj.CopyComplete
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\obj\Debug\UrboPrinting.exe
+C:\Users\EDITCREATION PC-2\Downloads\test\UrboPrinting\obj\Debug\UrboPrinting.pdb
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\bin\Debug\UrboPrinting.exe.config
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\bin\Debug\UrboPrinting.exe
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\bin\Debug\UrboPrinting.pdb
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\bin\Debug\Newtonsoft.Json.dll
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\bin\Debug\Newtonsoft.Json.xml
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\obj\Debug\UrboPrinting.csproj.AssemblyReference.cache
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\obj\Debug\test.Form1.resources
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\obj\Debug\UrboPrinting.Properties.Resources.resources
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\obj\Debug\UrboPrinting.csproj.GenerateResource.cache
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\obj\Debug\UrboPrinting.csproj.CoreCompileInputs.cache
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\obj\Debug\UrboPrinting.csproj.CopyComplete
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\obj\Debug\UrboPrinting.exe
+C:\Users\EDITCREATION PC-4\Downloads\Citizen\probs\UrboPrinting\obj\Debug\UrboPrinting.pdb
+C:\printer_project\UrboPrinting\UrboPrinting\bin\Debug\UrboPrinting.exe.config
+C:\printer_project\UrboPrinting\UrboPrinting\bin\Debug\UrboPrinting.exe
+C:\printer_project\UrboPrinting\UrboPrinting\bin\Debug\UrboPrinting.pdb
+C:\printer_project\UrboPrinting\UrboPrinting\bin\Debug\CSJLabelLib.dll
+C:\printer_project\UrboPrinting\UrboPrinting\bin\Debug\Newtonsoft.Json.dll
+C:\printer_project\UrboPrinting\UrboPrinting\bin\Debug\Newtonsoft.Json.xml
+C:\printer_project\UrboPrinting\UrboPrinting\obj\Debug\UrboPrinting.csproj.AssemblyReference.cache
+C:\printer_project\UrboPrinting\UrboPrinting\obj\Debug\UrboPrinting.Properties.Resources.resources
+C:\printer_project\UrboPrinting\UrboPrinting\obj\Debug\UrboPrinting.csproj.GenerateResource.cache
+C:\printer_project\UrboPrinting\UrboPrinting\obj\Debug\UrboPrinting.csproj.CoreCompileInputs.cache
+C:\printer_project\UrboPrinting\UrboPrinting\obj\Debug\UrboPrinting.csproj.CopyComplete
+C:\printer_project\UrboPrinting\UrboPrinting\obj\Debug\UrboPrinting.exe
+C:\printer_project\UrboPrinting\UrboPrinting\obj\Debug\UrboPrinting.pdb
+C:\printer_project\UrboPrinting\UrboPrinting\obj\Debug\UrboPrinting.Form1.resources
